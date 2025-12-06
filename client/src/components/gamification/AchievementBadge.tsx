@@ -54,6 +54,7 @@ const rarityConfig = {
     glow: "shadow-gray-400/50",
     text: "text-gray-500",
     label: "Common",
+    animation: "",
   },
   rare: {
     bg: "from-blue-400 to-blue-600",
@@ -61,6 +62,7 @@ const rarityConfig = {
     glow: "shadow-blue-400/50",
     text: "text-blue-500",
     label: "Rare",
+    animation: "hover-bounce",
   },
   epic: {
     bg: "from-purple-400 to-purple-600",
@@ -68,6 +70,7 @@ const rarityConfig = {
     glow: "shadow-purple-400/50",
     text: "text-purple-500",
     label: "Epic",
+    animation: "hover-bounce",
   },
   legendary: {
     bg: "from-yellow-400 to-orange-500",
@@ -75,6 +78,7 @@ const rarityConfig = {
     glow: "shadow-yellow-400/50",
     text: "text-yellow-500",
     label: "Legendary",
+    animation: "chest-glow",
   },
 };
 

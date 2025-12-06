@@ -54,17 +54,17 @@ export default function CardFlip({
                     className={cn(
                         "absolute inset-0 w-full h-full",
                         "[backface-visibility:hidden] [transform:rotateY(0deg)]",
-                        "overflow-hidden rounded-lg",
-                        "bg-card border border-border",
-                        "shadow-sm",
+                        "overflow-hidden rounded-2xl",
+                        "bg-card border-2 border-border",
+                        "shadow-sm card-3d",
                         "transition-all duration-300",
-                        "group-hover:shadow-lg group-hover:bg-accent/50",
+                        "group-hover:shadow-xl group-hover:bg-accent/30",
                         isFlipped ? "opacity-0" : "opacity-100"
                     )}
                 >
                     <div className="p-6 h-full flex flex-col">
                         <div className="flex items-center justify-between mb-4">
-                            <div className="p-3 bg-primary/10 rounded-xl group-hover:bg-primary/20 transition-colors">
+                            <div className="p-3 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl group-hover:from-primary/30 group-hover:to-primary/20 transition-all shadow-sm group-hover:shadow-md group-hover:scale-110 duration-300">
                                 {icon}
                             </div>
                             <div className="flex items-center text-emerald-600">
@@ -97,12 +97,12 @@ export default function CardFlip({
                     className={cn(
                         "absolute inset-0 w-full h-full",
                         "[backface-visibility:hidden] [transform:rotateY(180deg)]",
-                        "p-4 rounded-lg",
-                        "bg-card border border-border",
-                        "shadow-sm",
+                        "p-4 rounded-2xl",
+                        "bg-card border-2 border-border",
+                        "shadow-sm card-3d",
                         "flex flex-col",
                         "transition-all duration-300",
-                        "group-hover:shadow-lg group-hover:bg-accent/50",
+                        "group-hover:shadow-xl group-hover:bg-accent/30",
                         !isFlipped ? "opacity-0" : "opacity-100",
                         "overflow-hidden"
                     )}

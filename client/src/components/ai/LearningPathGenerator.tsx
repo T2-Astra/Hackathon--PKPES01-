@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { searchService, SearchResult } from "@/lib/search-service";
 
-const GEMINI_API_KEY = "AIzaSyDCSCfzH-fsmC592sdxX0SN6mDxtweapHc";
+const GEMINI_API_KEY = "AIzaSyBm6iWJwEGwH5gDTXs2fTtaHTxM5xLPrjc";
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 interface Module {
@@ -114,9 +114,13 @@ Create 4-5 modules with progressive difficulty. Use the web search results to ma
   
   const autoSavePath = async (pathData: GeneratedPath, _sources: SearchResult[]) => {
     try {
+      const token = localStorage.getItem('authToken');
       const response = await fetch("/api/learning-paths", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
         credentials: "include",
         body: JSON.stringify({
           title: pathData.title,

@@ -98,9 +98,7 @@ export default function Certificates() {
               Your earned credentials and achievements
             </p>
           </div>
-          <Badge variant="secondary" className="text-lg px-4 py-2">
-            {certificates.length} Certificates Earned
-          </Badge>
+
         </div>
 
         {/* Search & Filter */}

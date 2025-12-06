@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect } from 'react';
 import { useTheme } from '@/hooks/useTheme';
 
-type Theme = 'system' | 'light' | 'dark' | 'nature';
+type Theme = 'system' | 'light' | 'dark';
 
 interface ThemeContextProps {
   theme: Theme;
@@ -18,7 +18,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     // Apply initial theme based on stored preference or system preference
     const applyInitialTheme = () => {
       const stored = localStorage.getItem('theme') as Theme;
-      const preferredTheme = stored || 'system';
+      // Handle legacy 'nature' theme by defaulting to 'system'
+      const preferredTheme = stored === 'nature' ? 'system' : (stored || 'system');
       
       const root = document.documentElement;
       
@@ -32,13 +33,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         }
       } else if (preferredTheme === 'dark') {
         root.classList.add('dark');
-      } else if (preferredTheme === 'nature') {
-        root.classList.add('nature');
-        // Check if system prefers dark mode for nature theme
-        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (systemPrefersDark) {
-          root.classList.add('dark');
-        }
       }
     };
 

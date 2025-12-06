@@ -55,107 +55,21 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      {/* Quick Actions Dropdown - Fixed Top Right */}
-      <div className="fixed top-4 right-4 z-50">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              className="cursor-target relative group"
-              title="Quick Actions"
-            >
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary via-yellow-400 to-primary rounded-full blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
-              <div className="relative bg-primary border border-primary rounded-full p-2 shadow-lg backdrop-blur-sm hover:scale-110 transition-transform duration-300">
-                {/* Beautiful Logo: Learning Lighthouse */}
-                <svg 
-                  className="w-4 h-4 text-primary-foreground" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                >
-                  {/* Lighthouse Tower */}
-                  <path d="M10 22 L14 22 L13 4 L11 4 Z" fill="currentColor" opacity="0.8" />
-                  
-                  {/* Lighthouse Top */}
-                  <path d="M9 4 L15 4 L14 2 L10 2 Z" fill="currentColor" />
-                  
-                  {/* Light Beam - Main */}
-                  <path d="M12 2 L4 8 L12 6 L20 8 Z" fill="currentColor" opacity="0.3" />
-                  
-                  {/* Light Rays */}
-                  <path d="M12 2 L8 6" stroke="currentColor" strokeWidth="1.5" opacity="0.6" />
-                  <path d="M12 2 L16 6" stroke="currentColor" strokeWidth="1.5" opacity="0.6" />
-                  <path d="M12 2 L6 9" stroke="currentColor" strokeWidth="1" opacity="0.4" />
-                  <path d="M12 2 L18 9" stroke="currentColor" strokeWidth="1" opacity="0.4" />
-                  
-                  {/* Knowledge Waves */}
-                  <path d="M2 12 Q12 8 22 12" stroke="currentColor" strokeWidth="1" opacity="0.5" fill="none" />
-                  <path d="M3 15 Q12 11 21 15" stroke="currentColor" strokeWidth="1" opacity="0.4" fill="none" />
-                  <path d="M4 18 Q12 14 20 18" stroke="currentColor" strokeWidth="1" opacity="0.3" fill="none" />
-                  
-                  {/* Stars of Excellence */}
-                  <circle cx="6" cy="4" r="0.8" fill="currentColor" opacity="0.7" />
-                  <circle cx="18" cy="4" r="0.8" fill="currentColor" opacity="0.7" />
-                  <circle cx="4" cy="10" r="0.6" fill="currentColor" opacity="0.6" />
-                  <circle cx="20" cy="10" r="0.6" fill="currentColor" opacity="0.6" />
-                  
-                  {/* Foundation */}
-                  <rect x="9" y="20" width="6" height="2" fill="currentColor" opacity="0.9" />
-                  
-                  {/* Graduation Cap on Top */}
-                  <path d="M8 2 L16 2 L15 1 L9 1 Z" fill="currentColor" opacity="0.9" />
-                  <circle cx="16" cy="1.5" r="0.5" fill="currentColor" />
-                </svg>
-              </div>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem 
-              onClick={() => setIsSettingsOpen(true)}
-              className="cursor-pointer"
-            >
-              <Palette className="w-4 h-4 mr-2" />
-              <span>Change Theme</span>
-            </DropdownMenuItem>
-            <RateWebsiteSheet>
-              <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 cursor-pointer">
-                <Star className="w-4 h-4 mr-2" />
-                <span>Rate Website</span>
-              </div>
-            </RateWebsiteSheet>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+
 
 
       {/* Hero Section */}
       <section id="home" className="py-12 lg:py-20 pt-16 md:pt-12 lg:md:pt-20">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
-            <span data-slot="badge" className="inline-flex items-center justify-center font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 [&>svg]:pointer-events-none overflow-hidden gap-2 py-2 px-3 sm:px-4 text-xs sm:text-sm rounded-full shadow-lg transition-all duration-300 bg-primary hover:bg-primary/90 text-primary-foreground mb-6">
-              <div className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-              </div>
-              <span className="font-medium">50+ New Resources</span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-book-open h-3 w-3 text-primary-foreground" aria-hidden="true">
-                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-              </svg>
-              <span className="hidden sm:inline-flex items-center">Explore Now</span> 
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-right h-3 w-3 text-primary-foreground" aria-hidden="true">
-                <path d="M5 12h14"></path>
-                <path d="m12 5 7 7-7 7"></path>
-              </svg>
-            </span>
-            <TypingAnimation 
-              text={t.home.welcome}
-              typingSpeed={150}
-              deletingSpeed={100}
-              pauseDuration={2000}
-            />
+            <div className="inline-block mb-6">
+              <button className="shiny-cta focus:outline-none">
+                <span>✨ Introducing Learnflow</span>
+              </button>
+            </div>
+            <h1 className="text-4xl lg:text-6xl font-bold mb-6 text-foreground">
+              Welcome to <span className="text-primary">LearnFlow</span>
+            </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
               {t.home.subtitle}
             </p>

@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 
-type Theme = 'system' | 'light' | 'dark' | 'nature';
+type Theme = 'system' | 'light' | 'dark';
 
 export function useTheme() {
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('theme') as Theme;
+      // Handle legacy 'nature' theme by defaulting to 'system'
+      if (stored === 'nature') return 'system';
       return stored || 'system';
     }
     return 'system';
@@ -24,13 +26,6 @@ export function useTheme() {
       }
     } else if (newTheme === 'dark') {
       root.classList.add('dark');
-    } else if (newTheme === 'nature') {
-      root.classList.add('nature');
-      // Check if system prefers dark mode for nature theme
-      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (systemPrefersDark) {
-        root.classList.add('dark');
-      }
     }
     // 'light' theme doesn't need any classes (uses :root styles)
   };

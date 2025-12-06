@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Gemini API Configuration
-const GEMINI_API_KEY = 'AIzaSyDCSCfzH-fsmC592sdxX0SN6mDxtweapHc';
+const GEMINI_API_KEY = 'AIzaSyBm6iWJwEGwH5gDTXs2fTtaHTxM5xLPrjc';
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 interface SummaryResult {

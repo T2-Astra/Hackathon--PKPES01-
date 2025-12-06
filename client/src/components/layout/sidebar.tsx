@@ -7,7 +7,6 @@ import {
   User, 
   Shield, 
   LogOut,
-  ChevronLeft,
   ChevronRight,
   LogIn,
   MessageSquare,
@@ -16,7 +15,6 @@ import {
   Sparkles,
   ChevronUp,
   BookOpen,
-  TrendingUp,
   X,
   ClipboardList,
   Menu,
@@ -47,8 +45,42 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import SettingsDialog from "@/pages/settings";
 import { cn } from "@/lib/utils";
+
+// Icon color mapping for Duolingo-style colorful sidebar
+const iconColorMap: Record<string, { color: string; bg: string }> = {
+  "/": { color: "text-green-500", bg: "bg-green-500/10" },
+  "/profile": { color: "text-blue-500", bg: "bg-blue-500/10" },
+  "/learning-paths": { color: "text-cyan-500", bg: "bg-cyan-500/10" },
+  "/ai-tools": { color: "text-red-500", bg: "bg-red-500/10" },
+  "/mock-test": { color: "text-orange-500", bg: "bg-orange-500/10" },
+  "/flashcards": { color: "text-purple-500", bg: "bg-purple-500/10" },
+  "/achievements": { color: "text-yellow-500", bg: "bg-yellow-500/10" },
+  "/certificates": { color: "text-amber-500", bg: "bg-amber-500/10" },
+  "/chatbot": { color: "text-pink-500", bg: "bg-pink-500/10" },
+  "/videos": { color: "text-indigo-500", bg: "bg-indigo-500/10" },
+  "/upload": { color: "text-teal-500", bg: "bg-teal-500/10" },
+};
+
+// Progress dots component
+const ProgressDots = ({ current, total, color }: { current: number; total: number; color: string }) => (
+  <div className="flex items-center gap-0.5 ml-auto">
+    {[...Array(Math.min(total, 5))].map((_, i) => (
+      <motion.div
+        key={i}
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ delay: i * 0.05 }}
+        className={cn(
+          "w-1.5 h-1.5 rounded-full transition-colors",
+          i < current ? color : "bg-muted-foreground/20"
+        )}
+      />
+    ))}
+  </div>
+);
 
 // Navigation item component with animation
 const NavItem = ({ 
@@ -58,7 +90,8 @@ const NavItem = ({
   active, 
   collapsed, 
   onClick,
-  badge
+  badge,
+  progress
 }: { 
   path: string; 
   label: string; 
@@ -67,27 +100,49 @@ const NavItem = ({
   collapsed: boolean;
   onClick?: () => void;
   badge?: string;
+  progress?: { current: number; total: number };
 }) => {
+  const iconStyle = iconColorMap[path] || { color: "text-muted-foreground", bg: "bg-muted" };
+  
   if (collapsed) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
           <Link href={path}>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn(
-                "w-full justify-center h-11",
-                active && "bg-primary/10 text-primary"
-              )}
-              onClick={onClick}
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <Icon className="h-5 w-5" />
-            </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  "w-full justify-center h-11 relative hover-bounce",
+                  active && "bg-primary/10"
+                )}
+                onClick={onClick}
+              >
+                <div className={cn(
+                  "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
+                  active ? iconStyle.bg : "group-hover:" + iconStyle.bg
+                )}>
+                  <Icon className={cn("h-5 w-5", active ? iconStyle.color : "text-muted-foreground")} />
+                </div>
+                {active && (
+                  <div className="absolute left-0 inset-y-0 flex items-center">
+                    <div className="w-1 h-6 bg-primary rounded-r-full" />
+                  </div>
+                )}
+                {/* Progress indicator for collapsed */}
+                {progress && progress.current > 0 && (
+                  <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full" />
+                )}
+              </Button>
+            </motion.div>
           </Link>
         </TooltipTrigger>
         <TooltipContent side="right" className="font-medium">
-          {label}
+          {label} {progress && `(${progress.current}/${progress.total})`}
         </TooltipContent>
       </Tooltip>
     );
@@ -95,26 +150,40 @@ const NavItem = ({
 
   return (
     <Link href={path}>
-      <Button
-        variant="ghost"
-        size="sm"
-        className={cn(
-          "w-full justify-start text-sm h-11 px-3 group",
-          active && "bg-primary/10 text-primary font-medium"
-        )}
-        onClick={onClick}
+      <motion.div
+        whileHover={{ x: 4 }}
+        whileTap={{ scale: 0.98 }}
       >
-        <Icon className={cn(
-          "h-5 w-5 mr-3 transition-colors",
-          active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
-        )} />
-        <span className="flex-1 text-left">{label}</span>
-        {badge && (
-          <Badge variant="secondary" className="ml-auto text-xs">
-            {badge}
-          </Badge>
-        )}
-      </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn(
+            "w-full justify-start text-sm h-11 px-3 group relative",
+            active && "bg-primary/10 font-medium"
+          )}
+          onClick={onClick}
+        >
+          {active && (
+            <div className="absolute left-0 inset-y-0 flex items-center">
+              <div className="w-1 h-6 bg-primary rounded-r-full" />
+            </div>
+          )}
+          <div className={cn(
+            "w-8 h-8 rounded-lg flex items-center justify-center mr-3 transition-all",
+            active ? iconStyle.bg : "group-hover:" + iconStyle.bg
+          )}>
+            <Icon className={cn(
+              "h-5 w-5 transition-colors",
+              active ? iconStyle.color : "text-muted-foreground group-hover:" + iconStyle.color
+            )} />
+          </div>
+          <span className="flex-1 text-left">{label}</span>
+          {progress && !badge && (
+            <ProgressDots current={progress.current} total={progress.total} color={iconStyle.color.replace('text-', 'bg-')} />
+          )}
+
+        </Button>
+      </motion.div>
     </Link>
   );
 };
@@ -138,7 +207,35 @@ export default function Sidebar() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Fetch progress data for sidebar dots
+  const { data: learningPaths = [] } = useQuery({
+    queryKey: ["/api/learning-paths"],
+    queryFn: async () => {
+      const token = localStorage.getItem('authToken');
+      const res = await fetch("/api/learning-paths", { 
+        credentials: "include",
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!user,
+  });
 
+  const { data: userProgress } = useQuery({
+    queryKey: ["/api/user/progress"],
+    queryFn: async () => {
+      const res = await fetch("/api/user/progress", { credentials: "include" });
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !!user,
+  });
+
+  // Calculate progress for each section
+  const pathsCompleted = learningPaths.filter((p: any) => p.progress >= 100).length;
+  const quizzesCompleted = userProgress?.quizzesCompleted || 0;
+  const certificatesEarned = userProgress?.certificatesEarned || 0;
 
   const isActive = (path: string) => {
     if (path === "/" && location === "/") return true;
@@ -158,21 +255,20 @@ export default function Sidebar() {
   // Main navigation items
   const mainNavItems = [
     { path: "/", label: "Home", icon: Home },
-    { path: "/dashboard", label: "Dashboard", icon: TrendingUp, requireAuth: true },
   ];
 
-  // Learning section
+  // Learning section with progress
   const learningItems = [
-    { path: "/learning-paths", label: "Learning Paths", icon: BookOpen, requireAuth: true },
+    { path: "/learning-paths", label: "Learning Paths", icon: BookOpen, requireAuth: true, progress: { current: pathsCompleted, total: Math.max(learningPaths.length, 5) } },
     { path: "/ai-tools", label: "Summarizer", icon: Zap, badge: "New" },
-    { path: "/mock-test", label: "Practice Quiz", icon: Target, requireAuth: true },
-    { path: "/flashcards", label: "Flashcards", icon: ClipboardList, requireAuth: true },
+    { path: "/mock-test", label: "Practice Quiz", icon: Target, requireAuth: true, progress: { current: Math.min(quizzesCompleted, 5), total: 5 } },
+    { path: "/flashcards", label: "Flashcards", icon: ClipboardList, requireAuth: true, progress: { current: Math.min(Math.floor(quizzesCompleted / 2), 5), total: 5 } },
   ];
 
-  // Progress section
+  // Progress section with progress
   const progressItems = [
-    { path: "/achievements", label: "Achievements", icon: Trophy, requireAuth: true },
-    { path: "/certificates", label: "Certificates", icon: Award, requireAuth: true },
+    { path: "/achievements", label: "Achievements", icon: Trophy, requireAuth: true, progress: { current: Math.min(pathsCompleted + quizzesCompleted, 5), total: 5 } },
+    { path: "/certificates", label: "Certificates", icon: Award, requireAuth: true, progress: { current: Math.min(certificatesEarned, 5), total: 5 } },
   ];
 
   // Resources section
@@ -197,6 +293,7 @@ export default function Sidebar() {
             collapsed={isCollapsed}
             onClick={() => setIsMobileMenuOpen(false)}
             badge={item.badge}
+            progress={item.progress}
           />
         );
       })}
@@ -249,7 +346,9 @@ export default function Sidebar() {
               aria-label="Home"
               className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-muted focus:outline-none transition-colors"
             >
-              <Sparkles className="w-5 h-5" />
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9zm6.82 6L12 12.72L5.18 9L12 5.28zM17 16l-5 2.72L7 16v-3.73L12 15l5-2.73z"/>
+              </svg>
             </Link>
           )}
           
@@ -314,8 +413,9 @@ export default function Sidebar() {
             <Link href="/auth">
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <Button 
+                  variant="duo-green"
                   className={cn(
-                    "w-full gap-2 shadow-lg shadow-primary/25",
+                    "w-full gap-2",
                     isCollapsed && "px-0"
                   )}
                 >

@@ -22,7 +22,6 @@ import {
   Sun,
   Moon,
   Laptop,
-  Leaf,
   Volume2,
   Globe,
   Eye,
@@ -339,7 +338,7 @@ export default function SettingsDialog({ isOpen, onClose }: SettingsDialogProps)
                         <Label className="text-sm md:text-base">{t.settings.theme}</Label>
                         <p className="text-xs md:text-sm text-muted-foreground">{t.settings.themeDescription}</p>
                       </div>
-                      <Select value={theme} onValueChange={(value) => setTheme(value as 'system' | 'light' | 'dark' | 'nature')}>
+                      <Select value={theme} onValueChange={(value) => setTheme(value as 'system' | 'light' | 'dark')}>
                         <SelectTrigger className="w-full sm:w-32">
                           <SelectValue />
                         </SelectTrigger>
@@ -360,12 +359,6 @@ export default function SettingsDialog({ isOpen, onClose }: SettingsDialogProps)
                             <div className="flex items-center gap-2">
                               <Moon className="w-4 h-4" />
                               {t.settings.dark}
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="nature">
-                            <div className="flex items-center gap-2">
-                              <Leaf className="w-4 h-4" />
-                              {t.settings.nature}
                             </div>
                           </SelectItem>
                         </SelectContent>

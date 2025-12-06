@@ -146,23 +146,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(req.user);
   });
 
-  // Clerk authentication endpoint
-  app.post('/api/auth/clerk-login', async (req, res) => {
+  // Google OAuth authentication endpoint
+  app.post('/api/auth/google-login', async (req, res) => {
     try {
-      const { email, firstName, lastName, clerkId } = req.body;
+      const { email, firstName, lastName, googleId, image } = req.body;
       
-      if (!email || !firstName || !lastName || !clerkId) {
-        return res.status(400).json({ message: 'Missing required fields from Clerk' });
+      if (!email || !googleId) {
+        return res.status(400).json({ message: 'Missing required fields from Google' });
       }
 
       const db = getDatabase();
       const users = db.collection('users');
       
-      // Check if user exists by email or clerkId
+      // Check if user exists by email or googleId
       let user = await users.findOne({ 
         $or: [
           { email: email },
-          { clerkId: clerkId }
+          { googleId: googleId }
         ]
       });
 
@@ -170,9 +170,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create new user
         const newUser = {
           email: email,
-          firstName: firstName,
-          lastName: lastName,
-          clerkId: clerkId,
+          firstName: firstName || email.split('@')[0],
+          lastName: lastName || '',
+          googleId: googleId,
+          image: image,
           isAdmin: false,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -180,21 +181,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const result = await users.insertOne(newUser);
         user = { ...newUser, _id: result.insertedId };
-        console.log('✅ Created new user via Clerk:', email);
+        console.log('✅ Created new user via Google:', email);
       } else {
-        // Update existing user with Clerk ID if not present
-        if (!user.clerkId) {
-          await users.updateOne(
-            { _id: user._id },
-            { 
-              $set: { 
-                clerkId: clerkId,
-                updatedAt: new Date()
-              }
-            }
-          );
-        }
-        console.log('✅ Existing user logged in via Clerk:', email);
+        // Update existing user with Google ID and image if not present
+        const updateFields: any = { updatedAt: new Date() };
+        if (!user.googleId) updateFields.googleId = googleId;
+        if (image && !user.image) updateFields.image = image;
+        
+        await users.updateOne(
+          { _id: user._id },
+          { $set: updateFields }
+        );
+        console.log('✅ Existing user logged in via Google:', email);
       }
 
       // Create our JWT token
@@ -218,13 +216,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.json({ 
-        message: 'Clerk authentication successful',
+        message: 'Google authentication successful',
         user: authUser,
         token
       });
     } catch (error) {
-      console.error('Clerk authentication error:', error);
-      res.status(500).json({ message: 'Clerk authentication failed' });
+      console.error('Google authentication error:', error);
+      res.status(500).json({ message: 'Google authentication failed' });
     }
   });
 

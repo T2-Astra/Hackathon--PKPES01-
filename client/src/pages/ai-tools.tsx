@@ -24,10 +24,7 @@ export default function AITools() {
               </p>
             </div>
           </div>
-          <Badge variant="secondary" className="gap-1.5 text-xs px-3 py-1">
-            <Brain className="w-3.5 h-3.5" />
-            Gemini AI
-          </Badge>
+
         </motion.div>
 
         {/* Content Summarizer */}

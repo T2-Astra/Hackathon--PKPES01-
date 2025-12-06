@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext } from 'react';
-import { useClerk } from '@clerk/clerk-react';
+import { authService, useAuthActions } from '@/services/authService';
 
 interface User {
   id: string;
@@ -7,6 +7,7 @@ interface User {
   firstName: string;
   lastName: string;
   isAdmin?: boolean;
+  image?: string;
 }
 
 interface AuthContextType {
@@ -32,7 +33,7 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const { signOut } = useClerk();
+  const { signOut } = useAuthActions();
 
   useEffect(() => {
     checkAuth();
@@ -56,9 +57,20 @@ export function useAuth() {
         if (response.ok) {
           const userData = await response.json();
           setUser(userData);
+          
+          // Update auth service
+          authService.setUser({
+            id: userData.id,
+            name: `${userData.firstName} ${userData.lastName}`,
+            email: userData.email,
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            isAdmin: userData.isAdmin
+          }, storedToken);
         } else {
           // Token is invalid, remove it
           localStorage.removeItem('authToken');
+          localStorage.removeItem('learnflow_auth_user');
           setToken(null);
           setUser(null);
         }
@@ -69,6 +81,7 @@ export function useAuth() {
     } catch (error) {
       console.error('Auth check failed:', error);
       localStorage.removeItem('authToken');
+      localStorage.removeItem('learnflow_auth_user');
       setToken(null);
       setUser(null);
     } finally {
@@ -83,6 +96,16 @@ export function useAuth() {
     // Update state
     setToken(userToken);
     setUser(userData);
+    
+    // Update auth service
+    authService.setUser({
+      id: userData.id,
+      name: `${userData.firstName} ${userData.lastName}`,
+      email: userData.email,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      isAdmin: userData.isAdmin
+    }, userToken);
     
     // Sync onboarding data from localStorage to MongoDB if exists
     const savedOnboardingData = localStorage.getItem('learnflow_onboarding_data');
@@ -117,30 +140,15 @@ export function useAuth() {
     setUser(null);
     setToken(null);
     localStorage.removeItem('authToken');
+    localStorage.removeItem('learnflow_auth_user');
     console.log('✅ Local state cleared');
     
-    // Clear any Clerk-related session storage
-    sessionStorage.clear(); // Clear all session storage to ensure clean state
+    // Clear session storage
+    sessionStorage.clear();
     console.log('✅ Session storage cleared');
     
-    try {
-      // Sign out from Clerk
-      await signOut();
-      
-      // Call server logout to clear cookies
-      await fetch('/api/auth/logout', { 
-        method: 'POST',
-        credentials: 'include'
-      });
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
-    
-    // Force immediate redirect to landing page with a small delay to ensure state is cleared
-    console.log('🔄 Redirecting to landing page...');
-    setTimeout(() => {
-      window.location.replace('/'); // Use replace instead of href for immediate redirect
-    }, 100);
+    // Use the signOut from auth service
+    await signOut();
   };
 
   return {

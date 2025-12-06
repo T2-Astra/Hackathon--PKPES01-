@@ -11,7 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const GEMINI_API_KEY = "AIzaSyDCSCfzH-fsmC592sdxX0SN6mDxtweapHc";
+const GEMINI_API_KEY = "AIzaSyBm6iWJwEGwH5gDTXs2fTtaHTxM5xLPrjc";
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 interface Flashcard {
@@ -30,8 +30,35 @@ interface FlashcardDeck {
   cardCount: number;
   isAiGenerated: boolean;
   mastery: number;
+  xp?: number;
+  timesStudied?: number;
   createdAt?: Date;
 }
+
+// Get deck rarity based on mastery and times studied
+const getDeckRarity = (deck: FlashcardDeck): { rarity: string; color: string; borderColor: string; bgColor: string } => {
+  const mastery = deck.mastery || 0;
+  const timesStudied = deck.timesStudied || 0;
+  
+  if (mastery >= 90 && timesStudied >= 5) {
+    return { rarity: "Legendary", color: "text-amber-500", borderColor: "border-amber-500/50", bgColor: "bg-gradient-to-br from-amber-500/10 to-orange-500/10" };
+  } else if (mastery >= 70 && timesStudied >= 3) {
+    return { rarity: "Epic", color: "text-purple-500", borderColor: "border-purple-500/50", bgColor: "bg-gradient-to-br from-purple-500/10 to-pink-500/10" };
+  } else if (mastery >= 50 && timesStudied >= 2) {
+    return { rarity: "Rare", color: "text-blue-500", borderColor: "border-blue-500/50", bgColor: "bg-gradient-to-br from-blue-500/10 to-cyan-500/10" };
+  } else {
+    return { rarity: "Common", color: "text-muted-foreground", borderColor: "border-border", bgColor: "bg-card" };
+  }
+};
+
+// Get mastery level (1-5)
+const getMasteryLevel = (mastery: number): { level: number; label: string } => {
+  if (mastery >= 90) return { level: 5, label: "Master" };
+  if (mastery >= 70) return { level: 4, label: "Expert" };
+  if (mastery >= 50) return { level: 3, label: "Proficient" };
+  if (mastery >= 25) return { level: 2, label: "Learning" };
+  return { level: 1, label: "Beginner" };
+};
 
 export default function Flashcards() {
   const queryClient = useQueryClient();
@@ -263,54 +290,93 @@ Make cards clear, concise, and educational. Include a mix of definitions, concep
               </div>
             ) : (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {decks.map((deck: FlashcardDeck) => (
-                  <Card key={deck._id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                    <CardContent className="p-0">
-                      <div className="p-4">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              {deck.isAiGenerated && (
-                                <Badge variant="secondary" className="text-xs gap-1">
-                                  <Sparkles className="w-3 h-3" /> AI
+                {decks.map((deck: FlashcardDeck) => {
+                  const rarity = getDeckRarity(deck);
+                  const masteryInfo = getMasteryLevel(deck.mastery || 0);
+                  const deckXP = deck.xp || Math.floor((deck.mastery || 0) * (deck.cardCount || 10) / 10);
+                  
+                  return (
+                    <Card 
+                      key={deck._id} 
+                      className={cn(
+                        "overflow-hidden hover:shadow-lg transition-all border-2",
+                        rarity.borderColor,
+                        rarity.bgColor
+                      )}
+                    >
+                      <CardContent className="p-0">
+                        <div className="p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <Badge 
+                                  variant="outline" 
+                                  className={cn("text-xs font-semibold", rarity.color, rarity.borderColor)}
+                                >
+                                  {rarity.rarity}
                                 </Badge>
-                              )}
+                                {deck.isAiGenerated && (
+                                  <Badge variant="secondary" className="text-xs gap-1">
+                                    <Sparkles className="w-3 h-3" /> AI
+                                  </Badge>
+                                )}
+                              </div>
+                              <h3 className="font-semibold">{deck.title}</h3>
                             </div>
-                            <h3 className="font-semibold">{deck.title}</h3>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm("Delete this deck?")) {
+                                  deleteDeckMutation.mutate(deck._id!);
+                                }
+                              }}
+                              className="p-1.5 rounded-md hover:bg-red-500/10 text-muted-foreground hover:text-red-500"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (confirm("Delete this deck?")) {
-                                deleteDeckMutation.mutate(deck._id!);
-                              }
-                            }}
-                            className="p-1.5 rounded-md hover:bg-red-500/10 text-muted-foreground hover:text-red-500"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {deck.description && (
+                            <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{deck.description}</p>
+                          )}
+                          
+                          {/* Stats Row */}
+                          <div className="flex items-center justify-between text-sm mb-2">
+                            <span className="text-muted-foreground">{deck.cardCount || deck.cards?.length || 0} cards</span>
+                            <div className="flex items-center gap-1 text-primary font-medium">
+                              <Sparkles className="w-3 h-3" />
+                              <span>{deckXP} XP</span>
+                            </div>
+                          </div>
+                          
+                          {/* Mastery Level */}
+                          <div className="flex items-center justify-between text-sm mb-3">
+                            <span className="text-muted-foreground">Mastery</span>
+                            <div className="flex items-center gap-2">
+                              <div className="flex gap-0.5">
+                                {[1, 2, 3, 4, 5].map((lvl) => (
+                                  <div
+                                    key={lvl}
+                                    className={cn(
+                                      "w-2 h-4 rounded-sm",
+                                      lvl <= masteryInfo.level ? "bg-primary" : "bg-muted"
+                                    )}
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-xs font-medium">{masteryInfo.label}</span>
+                            </div>
+                          </div>
+                          
+                          <Progress value={deck.mastery || 0} className="h-1.5 mb-4" />
+                          <Button className="w-full gap-2" onClick={() => setStudyingDeck(deck)}>
+                            <Play className="w-4 h-4" />
+                            Study Now
+                          </Button>
                         </div>
-                        {deck.description && (
-                          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{deck.description}</p>
-                        )}
-                        <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
-                          <span>{deck.cardCount || deck.cards?.length || 0} cards</span>
-                          <span className={cn(
-                            "font-medium",
-                            (deck.mastery || 0) >= 80 ? "text-green-500" : (deck.mastery || 0) >= 50 ? "text-yellow-500" : ""
-                          )}>
-                            {deck.mastery || 0}% mastery
-                          </span>
-                        </div>
-                        <Progress value={deck.mastery || 0} className="h-1.5 mb-4" />
-                        <Button className="w-full gap-2" onClick={() => setStudyingDeck(deck)}>
-                          <Play className="w-4 h-4" />
-                          Study Now
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -366,27 +432,104 @@ function StudyMode({ deck, onClose, onUpdateMastery }: {
   }
 
   if (isComplete) {
-    const mastery = Math.round((results.correct / cards.length) * 100);
+    const accuracy = Math.round((results.correct / cards.length) * 100);
+    const xpEarned = Math.round(results.correct * 10 + (accuracy >= 80 ? 25 : accuracy >= 50 ? 10 : 0));
+    const streakBonus = accuracy >= 70 ? 1 : 0;
+    
+    // Badge progress calculation
+    const badges = [
+      { name: "Quick Learner", requirement: "Complete 5 study sessions", progress: 3, total: 5, icon: "🎯" },
+      { name: "Perfect Score", requirement: "Get 100% accuracy", progress: accuracy === 100 ? 1 : 0, total: 1, icon: "⭐" },
+      { name: "Dedicated Student", requirement: "Study 10 decks", progress: 7, total: 10, icon: "📚" },
+    ];
+    const closestBadge = badges.reduce((closest, badge) => {
+      const closestRemaining = closest.total - closest.progress;
+      const badgeRemaining = badge.total - badge.progress;
+      return badgeRemaining < closestRemaining && badgeRemaining > 0 ? badge : closest;
+    }, badges[0]);
+    
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="p-8 text-center max-w-md w-full">
-          <div className={cn(
-            "w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4",
-            mastery >= 80 ? "bg-green-500/20" : mastery >= 50 ? "bg-yellow-500/20" : "bg-red-500/20"
-          )}>
-            <span className={cn(
-              "text-3xl font-bold",
-              mastery >= 80 ? "text-green-500" : mastery >= 50 ? "text-yellow-500" : "text-red-500"
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-background to-muted/30">
+        <Card className="p-6 max-w-md w-full">
+          {/* Header */}
+          <div className="text-center mb-6">
+            <div className={cn(
+              "w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4",
+              accuracy >= 80 ? "bg-green-500/20" : accuracy >= 50 ? "bg-yellow-500/20" : "bg-red-500/20"
             )}>
-              {mastery}%
-            </span>
+              <span className={cn(
+                "text-3xl font-bold",
+                accuracy >= 80 ? "text-green-500" : accuracy >= 50 ? "text-yellow-500" : "text-red-500"
+              )}>
+                {accuracy}%
+              </span>
+            </div>
+            <h3 className="text-xl font-bold mb-1">
+              {accuracy >= 80 ? "Excellent Work!" : accuracy >= 50 ? "Good Progress!" : "Keep Practicing!"}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              {results.correct} of {cards.length} correct
+            </p>
           </div>
-          <h3 className="text-xl font-bold mb-2">
-            {mastery >= 80 ? "Excellent! 🎉" : mastery >= 50 ? "Good job! 👍" : "Keep practicing! 💪"}
-          </h3>
-          <p className="text-muted-foreground mb-6">
-            You got {results.correct} out of {cards.length} correct
-          </p>
+          
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            {/* XP Earned */}
+            <div className="bg-primary/10 rounded-xl p-4 text-center">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span className="text-2xl font-bold text-primary">+{xpEarned}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">XP Earned</p>
+            </div>
+            
+            {/* Streak */}
+            <div className={cn(
+              "rounded-xl p-4 text-center",
+              streakBonus > 0 ? "bg-orange-500/10" : "bg-muted"
+            )}>
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <span className="text-2xl font-bold">{streakBonus > 0 ? "+1" : "0"}</span>
+                <span className="text-lg">🔥</span>
+              </div>
+              <p className="text-xs text-muted-foreground">Streak {streakBonus > 0 ? "Bonus" : "Progress"}</p>
+            </div>
+            
+            {/* Accuracy */}
+            <div className="bg-muted rounded-xl p-4 text-center">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <Check className="w-4 h-4 text-green-500" />
+                <span className="text-2xl font-bold">{results.correct}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">Correct</p>
+            </div>
+            
+            {/* Incorrect */}
+            <div className="bg-muted rounded-xl p-4 text-center">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <X className="w-4 h-4 text-red-500" />
+                <span className="text-2xl font-bold">{results.incorrect}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">To Review</p>
+            </div>
+          </div>
+          
+          {/* Closest Badge */}
+          <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-xl p-4 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="text-2xl">{closestBadge.icon}</div>
+              <div className="flex-1">
+                <p className="font-medium text-sm">{closestBadge.name}</p>
+                <p className="text-xs text-muted-foreground">{closestBadge.requirement}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <Progress value={(closestBadge.progress / closestBadge.total) * 100} className="h-1.5 flex-1" />
+                  <span className="text-xs font-medium">{closestBadge.progress}/{closestBadge.total}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Actions */}
           <div className="flex gap-3">
             <Button variant="outline" onClick={() => {
               setCurrentIndex(0);
@@ -394,7 +537,7 @@ function StudyMode({ deck, onClose, onUpdateMastery }: {
               setResults({ correct: 0, incorrect: 0 });
               setIsComplete(false);
             }} className="flex-1 gap-2">
-              <RotateCcw className="w-4 h-4" /> Try Again
+              <RotateCcw className="w-4 h-4" /> Retry
             </Button>
             <Button onClick={onClose} className="flex-1">Done</Button>
           </div>

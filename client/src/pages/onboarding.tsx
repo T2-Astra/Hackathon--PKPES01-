@@ -17,7 +17,6 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuthContext";
 import LearningStyleQuiz from "@/components/onboarding/LearningStyleQuiz";
-import { useUser } from "@clerk/clerk-react";
 
 // Step configurations - 8 steps now (added sign-in step for guests)
 const TOTAL_STEPS = 8;
@@ -72,8 +71,7 @@ const preferredTimeOptions = [
 
 export default function Onboarding() {
   const [, setLocation] = useLocation();
-  const { user, login } = useAuth();
-  const { user: clerkUser, isLoaded: clerkLoaded } = useUser();
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [showLearningQuiz, setShowLearningQuiz] = useState(false);
   const [data, setData] = useState<OnboardingData>({
@@ -89,43 +87,6 @@ export default function Onboarding() {
     customInterests: "",
     customGoals: "",
   });
-
-  // Handle Clerk authentication after sign-in/sign-up from onboarding
-  useEffect(() => {
-    if (clerkLoaded && clerkUser && !user) {
-      const handleClerkAuth = async () => {
-        try {
-          const userData = {
-            email: clerkUser.primaryEmailAddress?.emailAddress || '',
-            firstName: clerkUser.firstName || '',
-            lastName: clerkUser.lastName || '',
-            clerkId: clerkUser.id,
-          };
-
-          const response = await fetch('/api/auth/clerk-login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify(userData),
-          });
-
-          if (response.ok) {
-            const responseData = await response.json();
-            await login(responseData.user, responseData.token);
-            
-            // Mark onboarding as complete and redirect
-            localStorage.setItem('learnflow_onboarding_completed', 'true');
-            console.log('✅ Clerk auth from onboarding successful');
-            window.location.replace('/');
-          }
-        } catch (error) {
-          console.error('Clerk auth error:', error);
-        }
-      };
-
-      handleClerkAuth();
-    }
-  }, [clerkLoaded, clerkUser, user, login]);
 
   const totalStepsForUser = user ? 7 : TOTAL_STEPS;
   const progress = ((currentStep + 1) / totalStepsForUser) * 100;

@@ -13,7 +13,8 @@ interface MCQQuestion {
 }
 
 // Gemini API key
-const GEMINI_API_KEY = 'AIzaSyDCSCfzH-fsmC592sdxX0SN6mDxtweapHc';
+const GEMINI_API_KEY = 'AIzaSyBOA_G75-RHR8rmWbhP9eJX0mmSzToDVKo';
+console.log('🔑 MCQ Generator using API key:', GEMINI_API_KEY.substring(0, 10) + '...');
 
 /**
  * Generates MCQ questions based on a prompt
@@ -46,6 +47,7 @@ async function generateWithGemini(
   numQuestions: number
 ): Promise<MCQQuestion[]> {
   console.log(`🤖 Generating ${numQuestions} questions using Gemini...`);
+  console.log(`🔑 Using API key: ${GEMINI_API_KEY.substring(0, 15)}...`);
 
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
   

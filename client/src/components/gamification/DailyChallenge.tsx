@@ -48,7 +48,7 @@ export default function DailyChallenge({
     .reduce((sum, c) => sum + c.xpReward, 0);
 
   return (
-    <Card className={cn("overflow-hidden", className)}>
+    <Card className={cn("overflow-hidden card-3d quest-card", className)}>
       {/* Header with gradient */}
       <CardHeader className="pb-2 bg-gradient-to-r from-primary/10 via-yellow-500/10 to-orange-500/10">
         <div className="flex items-center justify-between">
@@ -221,6 +221,7 @@ export default function DailyChallenge({
                         </p>
                         <Button
                           size="sm"
+                          variant="duo-green"
                           className="w-full gap-2"
                           onClick={(e) => {
                             e.stopPropagation();

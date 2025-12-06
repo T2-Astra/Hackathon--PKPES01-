@@ -4,13 +4,13 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import {
   Play, Lock, CheckCircle2, Star, Flame, Trophy,
-  Clock, ExternalLink, ChevronLeft, Zap, X, BookOpen, Loader2, Link2, Youtube, FileText, Lightbulb
+  Clock, ExternalLink, ChevronLeft, Zap, X, BookOpen, Loader2, Link2, Youtube, FileText, Lightbulb, Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { searchService } from "@/lib/search-service";
 
-const GEMINI_API_KEY = "AIzaSyDCSCfzH-fsmC592sdxX0SN6mDxtweapHc";
+const GEMINI_API_KEY = "AIzaSyBm6iWJwEGwH5gDTXs2fTtaHTxM5xLPrjc";
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 interface LearningResource {
@@ -80,7 +80,11 @@ export default function LearningPathView({ path: initialPath, onBack, onUpdatePr
   // Fetch fresh path data on mount
   const fetchLatestPath = useCallback(async () => {
     try {
-      const res = await fetch(`/api/learning-paths`, { credentials: "include" });
+      const token = localStorage.getItem('authToken');
+      const res = await fetch(`/api/learning-paths`, { 
+        credentials: "include",
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      });
       if (res.ok) {
         const paths = await res.json();
         const latestPath = paths.find((p: LearningPath) => p._id === initialPath._id);
@@ -98,9 +102,13 @@ export default function LearningPathView({ path: initialPath, onBack, onUpdatePr
   // Save active lesson state to MongoDB
   const saveActiveLessonToDB = useCallback(async (lessonState: ActiveLessonState | null) => {
     try {
+      const token = localStorage.getItem('authToken');
       await fetch(`/api/learning-paths/${path._id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
         credentials: "include",
         body: JSON.stringify({ activeLesson: lessonState }),
       });
@@ -112,13 +120,17 @@ export default function LearningPathView({ path: initialPath, onBack, onUpdatePr
   // Save generated content to module in MongoDB
   const saveModuleContentToDB = useCallback(async (moduleIndex: number, content: LessonContent) => {
     try {
+      const token = localStorage.getItem('authToken');
       const updatedModules = [...(path.modules || [])];
       if (updatedModules[moduleIndex]) {
         updatedModules[moduleIndex] = { ...updatedModules[moduleIndex], generatedContent: content };
       }
       await fetch(`/api/learning-paths/${path._id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
         credentials: "include",
         body: JSON.stringify({ modules: updatedModules }),
       });
@@ -371,10 +383,12 @@ Use the real URLs from search results when available. For missing resources, use
 
           <Button
             onClick={handleCompleteModule}
-            className="w-full h-12 text-base gap-2"
+            variant="duo-cta"
+            className="w-full h-14 text-lg gap-2"
           >
-            <CheckCircle2 className="w-5 h-5" />
-            Complete Lesson (+10 XP)
+            <CheckCircle2 className="w-6 h-6" />
+            Complete Lesson
+            <span className="ml-1 px-2 py-0.5 bg-white/20 rounded-full text-sm">+10 XP</span>
           </Button>
         </div>
       </div>
@@ -432,80 +446,176 @@ Use the real URLs from search results when available. For missing resources, use
           <Zap className="w-8 h-8 text-yellow-500" />
         </div>
 
-        <div className="relative">
-          <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-muted -translate-x-1/2" />
+        {/* Skill Tree - Enhanced Duolingo Style */}
+        <div className="relative py-4">
+          {/* Animated path line */}
+          <svg className="absolute left-1/2 top-0 bottom-0 -translate-x-1/2 w-4 h-full" style={{ zIndex: 0 }}>
+            <line 
+              x1="8" y1="0" x2="8" y2="100%" 
+              stroke="currentColor" 
+              strokeWidth="4" 
+              className="text-muted skill-path-line"
+              strokeLinecap="round"
+            />
+          </svg>
 
-          <div className="space-y-6 relative">
+          <div className="space-y-8 relative">
             {path.modules?.map((module, index) => {
               const unlocked = isModuleUnlocked(index);
               const completed = isModuleCompleted(index);
               const isCurrent = index === currentModule;
               const isLeft = index % 2 === 0;
+              
+              // Add treasure chest every 5 lessons
+              const showTreasure = (index + 1) % 5 === 0 && index < (path.modules?.length || 0) - 1;
 
               return (
-                <div
-                  key={module.id}
-                  className={cn(
-                    "flex items-center gap-4",
-                    isLeft ? "flex-row" : "flex-row-reverse"
-                  )}
-                >
-                  <div className={cn(
-                    "flex-1 max-w-[calc(50%-2rem)]",
-                    isLeft ? "text-right" : "text-left"
-                  )}>
-                    <div className={cn(
-                      "inline-block p-4 rounded-2xl border-2 transition-all",
-                      completed && "bg-green-500/10 border-green-500/30",
-                      isCurrent && "bg-primary/10 border-primary shadow-lg shadow-primary/20",
-                      !unlocked && "bg-muted/50 border-muted opacity-60"
-                    )}>
-                      <p className="font-semibold text-sm mb-1">{module.title}</p>
-                      <p className="text-xs text-muted-foreground mb-2">{module.duration}</p>
-                      
-                      {isCurrent && (
-                        <div className={cn("flex gap-2 mt-3", isLeft ? "justify-end" : "justify-start")}>
-                          <Button
-                            size="sm"
-                            className="gap-1 text-xs"
-                            onClick={() => handleOpenLesson(module, index)}
-                          >
-                            <Play className="w-3 h-3" /> Open
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className={cn(
-                    "w-14 h-14 rounded-full flex items-center justify-center z-10 border-4 transition-all shrink-0",
-                    completed && "bg-green-500 border-green-400 text-white",
-                    isCurrent && "bg-primary border-primary/50 text-white animate-pulse",
-                    !unlocked && "bg-muted border-muted-foreground/20 text-muted-foreground"
-                  )}>
-                    {completed ? (
-                      <CheckCircle2 className="w-6 h-6" />
-                    ) : isCurrent ? (
-                      <Play className="w-6 h-6" />
-                    ) : (
-                      <Lock className="w-5 h-5" />
+                <div key={module.id}>
+                  <div
+                    className={cn(
+                      "flex items-center gap-4",
+                      isLeft ? "flex-row" : "flex-row-reverse"
                     )}
-                  </div>
+                  >
+                    {/* Lesson Card */}
+                    <div className={cn(
+                      "flex-1 max-w-[calc(50%-2rem)]",
+                      isLeft ? "text-right" : "text-left"
+                    )}>
+                      <div className={cn(
+                        "inline-block p-4 rounded-2xl border-2 transition-all card-3d",
+                        completed && "bg-gradient-to-br from-green-500/10 to-emerald-500/5 border-green-500/40",
+                        isCurrent && "bg-gradient-to-br from-primary/10 to-cyan-500/5 border-primary shadow-lg shadow-primary/20",
+                        !unlocked && "bg-muted/30 border-muted/50 opacity-50 grayscale"
+                      )}>
+                        <p className="font-bold text-sm mb-1">{module.title}</p>
+                        <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1 justify-end">
+                          <Clock className="w-3 h-3" />
+                          {module.duration}
+                        </p>
+                        
+                        {/* XP reward indicator */}
+                        {(isCurrent || completed) && (
+                          <div className={cn(
+                            "inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full",
+                            completed ? "bg-green-500/20 text-green-500" : "bg-yellow-500/20 text-yellow-600"
+                          )}>
+                            <Zap className="w-3 h-3" />
+                            <span className="font-medium">{completed ? "+10 XP" : "10 XP"}</span>
+                          </div>
+                        )}
+                        
+                        {isCurrent && (
+                          <div className={cn("flex gap-2 mt-3", isLeft ? "justify-end" : "justify-start")}>
+                            <Button
+                              variant="duo-green"
+                              size="sm"
+                              className="gap-1 text-xs"
+                              onClick={() => handleOpenLesson(module, index)}
+                            >
+                              <Play className="w-3 h-3" /> Start Lesson
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
-                  <div className="flex-1 max-w-[calc(50%-2rem)]" />
+                    {/* Node Circle - Enhanced Duolingo Style */}
+                    <div className={cn(
+                      "relative lesson-node shrink-0",
+                      !unlocked && "lesson-node-locked",
+                      isCurrent && "lesson-node-available"
+                    )}>
+                      {/* Outer glow for current */}
+                      {isCurrent && (
+                        <div className="absolute inset-0 rounded-full bg-primary/30 blur-md scale-150" />
+                      )}
+                      
+                      {/* Completion sparkle */}
+                      {completed && (
+                        <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-yellow-400 sparkle z-20" />
+                      )}
+                      
+                      <div className={cn(
+                        "relative w-16 h-16 rounded-full flex items-center justify-center z-10 border-4 transition-all shadow-lg",
+                        completed && "bg-gradient-to-br from-green-500 to-emerald-500 border-green-400 text-white shadow-green-500/40",
+                        isCurrent && "bg-gradient-to-br from-primary to-cyan-500 border-primary/50 text-white shadow-primary/40",
+                        !unlocked && "bg-muted border-muted-foreground/20 text-muted-foreground shadow-none"
+                      )}>
+                        {completed ? (
+                          <CheckCircle2 className="w-7 h-7 drop-shadow-md" />
+                        ) : isCurrent ? (
+                          <Play className="w-7 h-7 drop-shadow-md" />
+                        ) : (
+                          <Lock className="w-6 h-6" />
+                        )}
+                        
+                        {/* Level number badge */}
+                        <div className={cn(
+                          "absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-2",
+                          completed ? "bg-yellow-400 border-yellow-300 text-yellow-900" : 
+                          isCurrent ? "bg-white border-primary text-primary" :
+                          "bg-muted border-muted-foreground/20 text-muted-foreground"
+                        )}>
+                          {index + 1}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex-1 max-w-[calc(50%-2rem)]" />
+                  </div>
+                  
+                  {/* Treasure Chest Milestone */}
+                  {showTreasure && (
+                    <div className="flex justify-center py-4">
+                      <div className={cn(
+                        "w-12 h-12 rounded-xl flex items-center justify-center transition-all",
+                        completed ? "bg-gradient-to-br from-yellow-400 to-orange-500 chest-glow" : "bg-muted/50"
+                      )}>
+                        <Star className={cn(
+                          "w-6 h-6",
+                          completed ? "text-white" : "text-muted-foreground"
+                        )} />
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
 
-            <div className="flex justify-center pt-4">
-              <div className={cn(
-                "w-20 h-20 rounded-full flex items-center justify-center border-4",
-                currentModule >= (path.modules?.length || 0)
-                  ? "bg-yellow-500 border-yellow-400 text-white"
-                  : "bg-muted border-muted-foreground/20 text-muted-foreground"
-              )}>
-                <Trophy className="w-10 h-10" />
+            {/* Final Trophy - Enhanced */}
+            <div className="flex flex-col items-center pt-6">
+              <div className="relative">
+                {/* Glow effect for completed */}
+                {currentModule >= (path.modules?.length || 0) && (
+                  <div className="absolute inset-0 rounded-full bg-yellow-400/40 blur-xl scale-150" />
+                )}
+                
+                <div className={cn(
+                  "relative w-24 h-24 rounded-full flex items-center justify-center border-4 shadow-xl transition-all",
+                  currentModule >= (path.modules?.length || 0)
+                    ? "bg-gradient-to-br from-yellow-400 via-orange-500 to-yellow-500 border-yellow-300 text-white shadow-yellow-500/50 chest-glow"
+                    : "bg-muted border-muted-foreground/20 text-muted-foreground"
+                )}>
+                  <Trophy className="w-12 h-12 drop-shadow-lg" />
+                </div>
+                
+                {currentModule >= (path.modules?.length || 0) && (
+                  <>
+                    <Sparkles className="absolute -top-2 left-0 w-6 h-6 text-yellow-300 sparkle" />
+                    <Sparkles className="absolute -top-1 right-0 w-5 h-5 text-yellow-300 sparkle" style={{ animationDelay: '0.3s' }} />
+                    <Sparkles className="absolute bottom-0 -right-2 w-4 h-4 text-yellow-300 sparkle" style={{ animationDelay: '0.6s' }} />
+                  </>
+                )}
               </div>
+              
+              <p className="text-center mt-3 font-bold text-sm">
+                {currentModule >= (path.modules?.length || 0) ? (
+                  <span className="gradient-text-gold">Path Complete!</span>
+                ) : (
+                  <span className="text-muted-foreground">Complete all lessons</span>
+                )}
+              </p>
             </div>
           </div>
         </div>
