@@ -1,12 +1,41 @@
+# Dependencies
 node_modules
-dist
-.DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz
 
-# Environment files
+# Build output
+dist
+
+# Environment files (IMPORTANT: contains secrets)
 .env
 .env.*
 *.env
+.env.local
+.env.*.local
 client/.env
+client/.env.*
+client/.env.local
+
+# OS files
+.DS_Store
+
+# Server
+server/public
+
+# Vite
+vite.config.ts.*
+
+# Archives
+*.tar.gz
+
+# Uploads (user data)
+uploads/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local state
+.local/
