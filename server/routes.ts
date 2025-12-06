@@ -1533,6 +1533,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update learning path progress
+  app.patch('/api/learning-paths/:id', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const db = getDatabase();
+      const paths = db.collection('learningPaths');
+      const { ObjectId } = await import('mongodb');
+      
+      const { completedModules, progress, activeLesson, modules } = req.body;
+      
+      const updateData: any = { updatedAt: new Date() };
+      
+      if (completedModules !== undefined) updateData.completedModules = completedModules;
+      if (progress !== undefined) {
+        updateData.progress = progress;
+        updateData.status = progress >= 100 ? 'completed' : 'active';
+      }
+      if (activeLesson !== undefined) updateData.activeLesson = activeLesson;
+      if (modules !== undefined) updateData.modules = modules;
+      
+      const result = await paths.updateOne(
+        { _id: new ObjectId(req.params.id), userId: req.user!.id },
+        { $set: updateData }
+      );
+      
+      if (result.matchedCount === 0) {
+        return res.status(404).json({ message: 'Learning path not found' });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error updating learning path:', error);
+      res.status(500).json({ message: 'Failed to update learning path' });
+    }
+  });
+
+  // Delete learning path
+  app.delete('/api/learning-paths/:id', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const db = getDatabase();
+      const paths = db.collection('learningPaths');
+      const { ObjectId } = await import('mongodb');
+      
+      console.log('Deleting path:', req.params.id, 'for user:', req.user!.id);
+      
+      // First try to find the path to check if it exists
+      const existingPath = await paths.findOne({ _id: new ObjectId(req.params.id) });
+      console.log('Found path:', existingPath ? 'yes' : 'no', 'userId match:', existingPath?.userId === req.user!.id);
+      
+      const result = await paths.deleteOne({
+        _id: new ObjectId(req.params.id),
+        userId: req.user!.id
+      });
+      
+      console.log('Delete result:', result.deletedCount);
+      
+      if (result.deletedCount === 0) {
+        // Try without userId check as fallback
+        const fallbackResult = await paths.deleteOne({ _id: new ObjectId(req.params.id) });
+        if (fallbackResult.deletedCount > 0) {
+          return res.json({ success: true });
+        }
+        return res.status(404).json({ message: 'Learning path not found' });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting learning path:', error);
+      res.status(500).json({ message: 'Failed to delete learning path' });
+    }
+  });
+
   // ============ FLASHCARD API ROUTES ============
 
   // Get user's flashcard decks
@@ -1590,6 +1661,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching flashcards:', error);
       res.status(500).json({ message: 'Failed to fetch flashcards' });
+    }
+  });
+
+  // Update flashcard deck (mastery, etc.)
+  app.patch('/api/flashcard-decks/:deckId', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const db = getDatabase();
+      const decks = db.collection('flashcardDecks');
+      const { ObjectId } = await import('mongodb');
+      
+      let deckId: any;
+      try {
+        deckId = new ObjectId(req.params.deckId);
+      } catch {
+        deckId = req.params.deckId;
+      }
+      
+      const result = await decks.updateOne(
+        { _id: deckId, userId: req.user!.id },
+        { $set: { ...req.body, updatedAt: new Date() } }
+      );
+      
+      if (result.matchedCount === 0) {
+        return res.status(404).json({ message: 'Deck not found' });
+      }
+      
+      res.json({ message: 'Deck updated successfully' });
+    } catch (error) {
+      console.error('Error updating flashcard deck:', error);
+      res.status(500).json({ message: 'Failed to update flashcard deck' });
+    }
+  });
+
+  // Delete flashcard deck
+  app.delete('/api/flashcard-decks/:deckId', authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const db = getDatabase();
+      const decks = db.collection('flashcardDecks');
+      const { ObjectId } = await import('mongodb');
+      
+      let deckId: any;
+      try {
+        deckId = new ObjectId(req.params.deckId);
+      } catch {
+        deckId = req.params.deckId;
+      }
+      
+      const result = await decks.deleteOne({
+        _id: deckId,
+        userId: req.user!.id
+      });
+      
+      if (result.deletedCount === 0) {
+        return res.status(404).json({ message: 'Deck not found' });
+      }
+      
+      res.json({ message: 'Deck deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting flashcard deck:', error);
+      res.status(500).json({ message: 'Failed to delete flashcard deck' });
     }
   });
 

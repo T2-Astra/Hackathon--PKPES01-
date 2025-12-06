@@ -3,12 +3,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Sparkles, Upload, FileText, Loader2, Copy, Check,
+  Upload, FileText, Loader2, Copy, Check,
   BookOpen, ListChecks, Brain, Lightbulb, Download,
-  Wand2, RefreshCw, Volume2, Languages
+  Wand2, RefreshCw
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -31,6 +31,9 @@ export default function ContentSummarizer() {
   const [activeTab, setActiveTab] = useState("summary");
   const [copied, setCopied] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
+  const [showAnswers, setShowAnswers] = useState(false);
+  const [flippedCards, setFlippedCards] = useState<Record<number, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -60,6 +63,9 @@ export default function ContentSummarizer() {
 
     setIsProcessing(true);
     setResult(null);
+    setSelectedAnswers({});
+    setShowAnswers(false);
+    setFlippedCards({});
     
     try {
       const model = genAI.getGenerativeModel({
@@ -162,27 +168,13 @@ ${result.quiz.map((q, i) => `### Question ${i + 1}\n${q.question}\n${q.options.m
   };
 
   return (
-    <div className="space-y-6">
+    <div className={cn(
+      "space-y-6",
+      !result && !isProcessing && "min-h-[60vh] flex flex-col items-center justify-center"
+    )}>
       {/* Input Section */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <motion.div
-                animate={{ rotate: [0, 360] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-              >
-                <Sparkles className="w-6 h-6 text-primary" />
-              </motion.div>
-              <CardTitle>AI Content Summarizer</CardTitle>
-            </div>
-            <Badge variant="secondary" className="gap-1">
-              <Brain className="w-3 h-3" />
-              Powered by Gemini
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <Card className={cn(!result && !isProcessing && "w-full max-w-2xl")}>
+        <CardContent className="space-y-4 pt-6">
           {/* Upload Area */}
           <div
             onClick={() => fileInputRef.current?.click()}
@@ -389,18 +381,40 @@ ${result.quiz.map((q, i) => `### Question ${i + 1}\n${q.question}\n${q.options.m
                   <TabsContent value="flashcards" className="mt-4">
                     <div className="grid gap-4">
                       {result.flashcards.length > 0 ? (
-                        result.flashcards.map((card, i) => (
-                          <motion.div
-                            key={i}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.1 }}
-                            className="p-4 rounded-xl border bg-muted/50"
+                        <>
+                          <p className="text-sm text-muted-foreground text-center mb-2">
+                            Click on a card to reveal the answer
+                          </p>
+                          {result.flashcards.map((card, i) => (
+                            <motion.div
+                              key={i}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: i * 0.1 }}
+                              onClick={() => setFlippedCards(prev => ({ ...prev, [i]: !prev[i] }))}
+                              className="p-4 rounded-xl border bg-muted/50 cursor-pointer hover:border-primary/50 transition-all min-h-[100px] flex flex-col justify-center"
+                            >
+                              {flippedCards[i] ? (
+                                <div>
+                                  <p className="text-xs text-primary mb-1">Answer:</p>
+                                  <p className="text-muted-foreground">{card.back}</p>
+                                </div>
+                              ) : (
+                                <div>
+                                  <p className="text-xs text-muted-foreground mb-1">Question:</p>
+                                  <p className="font-medium">{card.front}</p>
+                                </div>
+                              )}
+                            </motion.div>
+                          ))}
+                          <Button 
+                            variant="outline" 
+                            className="w-full"
+                            onClick={() => setFlippedCards({})}
                           >
-                            <p className="font-medium mb-2">Q: {card.front}</p>
-                            <p className="text-muted-foreground">A: {card.back}</p>
-                          </motion.div>
-                        ))
+                            Reset All Cards
+                          </Button>
+                        </>
                       ) : (
                         <p className="text-muted-foreground text-center py-4">No flashcards generated</p>
                       )}
@@ -410,35 +424,65 @@ ${result.quiz.map((q, i) => `### Question ${i + 1}\n${q.question}\n${q.options.m
                   <TabsContent value="quiz" className="mt-4">
                     <div className="space-y-6">
                       {result.quiz.length > 0 ? (
-                        result.quiz.map((q, i) => (
-                          <motion.div
-                            key={i}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.1 }}
-                            className="p-4 rounded-xl border"
-                          >
-                            <p className="font-medium mb-3">
-                              {i + 1}. {q.question}
-                            </p>
-                            <div className="grid gap-2">
-                              {q.options.map((option, j) => (
-                                <div
-                                  key={j}
-                                  className={cn(
-                                    "p-3 rounded-lg border transition-all",
-                                    j === q.answer && "border-green-500 bg-green-500/10"
-                                  )}
-                                >
-                                  <span className="text-sm">{option}</span>
-                                  {j === q.answer && (
-                                    <Check className="w-4 h-4 text-green-500 inline ml-2" />
-                                  )}
-                                </div>
-                              ))}
+                        <>
+                          {result.quiz.map((q, i) => (
+                            <motion.div
+                              key={i}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: i * 0.1 }}
+                              className="p-4 rounded-xl border"
+                            >
+                              <p className="font-medium mb-3">
+                                {i + 1}. {q.question}
+                              </p>
+                              <div className="grid gap-2">
+                                {q.options.map((option, j) => (
+                                  <div
+                                    key={j}
+                                    onClick={() => !showAnswers && setSelectedAnswers(prev => ({ ...prev, [i]: j }))}
+                                    className={cn(
+                                      "p-3 rounded-lg border transition-all cursor-pointer hover:bg-muted/50",
+                                      selectedAnswers[i] === j && !showAnswers && "border-primary bg-primary/10",
+                                      showAnswers && j === q.answer && "border-green-500 bg-green-500/10",
+                                      showAnswers && selectedAnswers[i] === j && j !== q.answer && "border-red-500 bg-red-500/10"
+                                    )}
+                                  >
+                                    <span className="text-sm">{option}</span>
+                                    {showAnswers && j === q.answer && (
+                                      <Check className="w-4 h-4 text-green-500 inline ml-2" />
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </motion.div>
+                          ))}
+                          <div className="flex gap-2">
+                            <Button 
+                              onClick={() => setShowAnswers(true)}
+                              disabled={Object.keys(selectedAnswers).length === 0}
+                              className="flex-1"
+                            >
+                              Check Answers
+                            </Button>
+                            <Button 
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedAnswers({});
+                                setShowAnswers(false);
+                              }}
+                            >
+                              Reset
+                            </Button>
+                          </div>
+                          {showAnswers && (
+                            <div className="p-4 rounded-xl bg-muted/50 text-center">
+                              <p className="font-medium">
+                                Score: {result.quiz.filter((q, i) => selectedAnswers[i] === q.answer).length} / {result.quiz.length}
+                              </p>
                             </div>
-                          </motion.div>
-                        ))
+                          )}
+                        </>
                       ) : (
                         <p className="text-muted-foreground text-center py-4">No quiz questions generated</p>
                       )}
