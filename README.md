@@ -1,4 +1,4 @@
-# 🚀 LearnFlow....
+# 🚀 LearnFlow
 
 > **AI-Powered Personalized Learning Platform for Everyone**
 
